@@ -511,15 +511,19 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E remove(int index) {
+        // 检查是否越界
         rangeCheck(index);
 
         modCount++;
+        // 取出原来的元素，这个位置往后的元素需要移动
         E oldValue = elementData(index);
-
+        // index的前一位
         int numMoved = size - index - 1;
         if (numMoved > 0)
+            // 从原数组的起始位置开始，把numMoved个元素复制到目标数组中去
             System.arraycopy(elementData, index+1, elementData, index,
                              numMoved);
+        // 最后一位复制为null，为了更好地垃圾回收
         elementData[--size] = null; // clear to let GC do its work
 
         return oldValue;

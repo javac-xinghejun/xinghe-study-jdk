@@ -5,17 +5,13 @@
 本文分为以下几个部分：
 
 1. ArrayList的底层实现
-2. ArrayList的
-3. 优化
-4. 跟其他集合的对比
+2. ArrayList内部方法汇总
 
 
 
 ## ArrayList的底层实现
 
-在谈实现之前，先想一下ArrayList是什么，用来干什么。
-
-ArrayList是一个集合，集合就是要装东西的。那么它肯定有**容量**、和把东西（元素）放进去的和取出来的方法。这里就先从这几个问题开始说起。
+在谈实现之前，先想一下ArrayList是什么，用来干什么。我们知道，List是有序列表，可以放可重复的元素和null。那么ArrayList顾名思义就是用数组实现的list。ArrayList是一个集合，集合就是要装东西的。那么它肯定有**容量**、和**把东西（元素）放进去的和取出来的方法**。这里就先从这几个问题开始说起。
 
 ### ArrayList的基本属性
 
@@ -69,6 +65,92 @@ public class ArrayList<E> extends AbstractList<E>
     private int size;
 }
 ```
+
+抛开序列号不管，这几个成员变量分别是：默认数组、默认空数组、默认数组的初始容量、盛放元素的数组和元素个数。
+
+## 放入元素
+
+下面以add(E)方法来看看ArrayList的底层实现和扩容。
+
+```java
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    elementData[size++] = e;
+    return true;
+}
+```
+
+
+
+在放入元素的过程中，首先会判断容器的容量是否够，如果不够则进行一次扩容：
+
+```java
+private void ensureCapacityInternal(int minCapacity) {
+    ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
+}
+
+private static int calculateCapacity(Object[] elementData, int minCapacity) {
+    if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+        return Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+    return minCapacity;
+}
+
+private void ensureExplicitCapacity(int minCapacity) {
+    modCount++;// 当前ArrayList结构修改次数+1
+
+    // overflow-conscious code
+    if (minCapacity - elementData.length > 0)
+        grow(minCapacity);
+}
+
+private void grow(int minCapacity) {
+    // overflow-conscious code
+    int oldCapacity = elementData.length;
+    int newCapacity = oldCapacity + (oldCapacity >> 1); // 新的容量是在原容量的大小上增加1/2。 >> 原数据/2，即：10 >> 1 == 5
+    if (newCapacity - minCapacity < 0)
+        newCapacity = minCapacity; // 如果扩充后的容量还是比给定的最小容量小，则直接把新容量设置为给定的最小容量。即：每次只会扩充一次
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    // minCapacity is usually close to size, so this is a win:
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+```
+
+这里可以看出，扩容逻辑主要在这里完成的。每次扩容到原来的1.5倍，设定的默认最大数组长度是 `Integer.MAX_VALUE - 8` ，一旦分配的长度超过这个数，则分配的数组长度最大为 ` Integer.MAX_VALUE `。代码的最后可以看出，其实现是通过调用Arrays.copyOf()方法来实现的。以上就是ArrayList添加元素及扩容的主要实现。
+
+### 移除元素
+
+接下来看看remove()方法。源码如下：
+
+```java
+    public E remove(int index) {
+        // 检查是否越界
+        rangeCheck(index);
+
+        modCount++;
+        // 取出原来的元素，这个位置往后的元素需要移动
+        E oldValue = elementData(index);
+        // index的前一位
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+            // 从原数组的起始位置开始，把numMoved个元素复制到目标数组中去
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+        // 最后一位复制为null，为了更好地垃圾回收
+        elementData[--size] = null; // clear to let GC do its work
+
+        return oldValue;
+    }
+```
+
+
+
+## 总结
+
+可知ArrayList的底层是通过对数组进行扩容和复制来实现数据的加入和移除的。
+
+
 
 
 
