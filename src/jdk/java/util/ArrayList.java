@@ -140,6 +140,7 @@ public class ArrayList<E> extends AbstractList<E>
      * 存储 ArrayList 元素的数组缓冲区。
      * ArrayList 的容量就是这个数组缓冲区的长度。
      * 当添加第一个元素时，任何具有 elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA 的空 ArrayList 都将扩展为 DEFAULT_CAPACITY。
+     * transient关键字表示这个字段不会被序列化，因为这个数据尾部有null元素，提高空间利用率
      */
     transient Object[] elementData; // non-private to simplify nested class access
 
@@ -784,6 +785,7 @@ public class ArrayList<E> extends AbstractList<E>
         s.writeInt(size);
 
         // Write out all elements in the proper order.
+        // 顺序写入所有的元素，这里遍历的长度是size，即元素个数，避免了elementData扩容后的空数据被写入
         for (int i=0; i<size; i++) {
             s.writeObject(elementData[i]);
         }

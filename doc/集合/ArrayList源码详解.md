@@ -6,6 +6,7 @@
 
 1. ArrayList的底层实现
 2. ArrayList内部方法汇总
+3. ArrayList序列化和反序列化
 
 
 
@@ -119,7 +120,7 @@ private void grow(int minCapacity) {
 
 这里可以看出，扩容逻辑主要在这里完成的。每次扩容到原来的1.5倍，设定的默认最大数组长度是 `Integer.MAX_VALUE - 8` ，一旦分配的长度超过这个数，则分配的数组长度最大为 ` Integer.MAX_VALUE `。代码的最后可以看出，其实现是通过调用Arrays.copyOf()方法来实现的。以上就是ArrayList添加元素及扩容的主要实现。
 
-### 移除元素
+## 移除元素
 
 接下来看看remove()方法。源码如下：
 
@@ -142,6 +143,32 @@ private void grow(int minCapacity) {
 
         return oldValue;
     }
+```
+
+## ArrayList的序列化和反序列化
+
+ArrayList实现了`Serializable`接口，那么不可避免地需要序列化和反序列化。这里我们看源码可知ArrayList内部使用的存放数据的数组被`transient` 修饰，即这个字段不可以被序列化。那么ArrayList是怎么做的呢？ 看下源码：
+
+```java
+    private void writeObject(java.io.ObjectOutputStream s)
+        throws java.io.IOException{
+        // Write out element count, and any hidden stuff
+        int expectedModCount = modCount;
+        s.defaultWriteObject();
+
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
+
+        // Write out all elements in the proper order.
+        // 顺序写入所有的元素，这里遍历的长度是size，即元素个数，避免了elementData扩容后的空数据被写入
+        for (int i=0; i<size; i++) {
+        s.writeObject(elementData[i]);
+        }
+
+        if (modCount != expectedModCount) {
+        throw new ConcurrentModificationException();
+        }
+        }
 ```
 
 
